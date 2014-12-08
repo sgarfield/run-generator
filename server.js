@@ -1,30 +1,24 @@
 // Express initialization
 var express = require('express');
-var app = express();
 var bodyParser = require('body-parser');
+var validator = require('validator'); // Use to validate input!
+var app = express();
 // See https://stackoverflow.com/questions/5710358/how-to-get-post-query-in-express-node-js
 app.use(bodyParser.json());
 // See https://stackoverflow.com/questions/25471856/express-throws-error-as-body-parser-deprecated-undefined-extended
 app.use(bodyParser.urlencoded({ extended: true }));
-var validator = require('validator'); // Use to validate input!
-/* USE THE FOLLOWING:
-        for name of run: isAlpha(str), isAlphanumeric(str)
-        for distance: isFloat(str), isInt(str), isLength(str, 1, 5)  // i.e. 10.55 might be 5 chars long
-        for URL: validator.isURL(str), contains(str, seed) where seed would be gmap-pedometer or favoriterun
-*/
+
 // Mongo initialization, setting up a connection to a MongoDB  (on Heroku or localhost)
-var mongoUri = process.env.MONGOLAB_URI ||
-        process.env.MONGOHQ_URL ||
-        'mongodb://localhost/runs';
+var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
 var mongo = require('mongodb');
 var collections = ["gantcher","baronian"];
 var db = mongo.Db.connect(mongoUri, function (error, databaseConnection) {
         db = databaseConnection;
         if (db){
-                db.createCollection("gantcher", function(err, collection){
+                db.createCollection("gantcher", function (err, collection){
                         if (err) throw err;
                 });
-                db.createCollection("baronian", function(er, collection){
+                db.createCollection("baronian", function (er, collection){
                         if (er) throw er;
                 });
         }
@@ -54,7 +48,7 @@ app.get('/', function (req, res) {
 });
 
 /* This route will take in the input from the home page */
-app.post('/', function(req, res) {
+app.post('/', function (req, res) {
 
         var message = ""; /* error message */
 
@@ -135,7 +129,7 @@ app.post('/', function(req, res) {
 
 });
 
-app.get('/addRun', function(req, res) {
+app.get('/addRun', function (req, res) {
         var html = '<!DOCTYPE HTML><html><head><title>Add Run</title></head><body><h1>Add a run</h1>' +
                    '<form action="/addRun" method="post">' +
                    'Where does the run start from? ' +
@@ -157,7 +151,7 @@ app.get('/addRun', function(req, res) {
 });
 /* This will allow for more runs to be added without halting the app */
 /* Of course there are some security issues with this, but the input it at least sanitized */
-app.post('/addRun', function(req, res) {
+app.post('/addRun', function (req, res) {
 
         validator.escape(req.body);     /* preventing XSS */
 
@@ -224,8 +218,8 @@ app.post('/addRun', function(req, res) {
                 };
                 var html = "<!DOCTYPE HTML><html><head><title>Run Submission</title></head><body>";
 
-                db.collection(col, function(er, collection) {
-                        collection.find().toArray(function(err, cursor) {
+                db.collection(col, function (er, collection) {
+                        collection.find().toArray(function (err, cursor) {
                                 if (!err) {
                                         for (var i = 0; i < cursor.length; i++) {
                                                 if (name.toLowerCase() == cursor[i].name.toLowerCase()) {
@@ -255,6 +249,6 @@ app.post('/addRun', function(req, res) {
         }
 });
 
-
 // Oh joy! http://stackoverflow.com/questions/15693192/heroku-node-js-error-web-process-failed-to-bind-to-port-within-60-seconds-of
 app.listen(process.env.PORT || 3000);
+
