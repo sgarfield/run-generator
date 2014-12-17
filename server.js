@@ -1,254 +1,309 @@
-// Express initialization
+/*
+ * Sam Garfield
+ * server.js
+ * Developed 12/16/14
+ *
+ * This is the interface and back-end code that reads user input and
+ * returns viable running routes from a database. It also allows users
+ * to submit their own runs, under the right conditions.
+ *
+ * Uses: Javascript, Node.js, Express, and MongoDB
+ */
+
+/* Ideas:
+        - Have a "hilly" boolean value for each run
+        - Bathroom friendliness rating?
+        - Maybe split runs by region?
+        - Allowing a user to search for the run name?
+                - Avoid querying
+*/
 var express = require('express');
 var bodyParser = require('body-parser');
-var validator = require('validator'); // Use to validate input!
+var validator = require('validator');
 var app = express();
-// See https://stackoverflow.com/questions/5710358/how-to-get-post-query-in-express-node-js
+
 app.use(bodyParser.json());
-// See https://stackoverflow.com/questions/25471856/express-throws-error-as-body-parser-deprecated-undefined-extended
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Mongo initialization, setting up a connection to a MongoDB  (on Heroku or localhost)
 var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
 var mongo = require('mongodb');
-var collections = ["gantcher","baronian"];
 var db = mongo.Db.connect(mongoUri, function (error, databaseConnection) {
         db = databaseConnection;
         if (db){
-                db.createCollection("gantcher", function (err, collection){
+                db.createCollection("runs", function (err, collection){
                         if (err) throw err;
-                });
-                db.createCollection("baronian", function (er, collection){
-                        if (er) throw er;
                 });
         }
 });
 
 app.get('/', function (req, res) {
         res.set('Content-Type', 'text/html');
-        var html = '<h1>Run Generator</h1>' +
+        var link = "<p><a href='/addRun'>Add a run</a></p></div></body></html>";
+        var html = '<div align="center"><h1>Run Generator</h1>' +
                    '<form action="/" method="post">' +
-                   '<br><br>Where are you running from? ' +
-                   '<select name="location">' +
-                   '<option value="Gantcher">Gantcher</option>' +
-                   '<option value="Baronian">Baronian</option>' +
-                   '</select>' + 
-                   '<br><br>How far do you want to run? ' +
-                   '<input type="text" name="distance" /> mile(s)' +
-                   '<br><br>Give or take how many miles? ' +
-                   '<select name="range">' +
-                   '<option value="1">1</option>' +
-                   '<option value="2">2</option>' +
-                   '<option value="3">3</option>' +
-                   '</select>' + 
-                   '<br><br>' +
+                   '<table cellspacing="20">' +
+                   '<tr><td align="right">Where are you running from?</td>' +
+                   '<td><input type="radio" name="location" value="gantcher" required>Gantcher<br>' +
+                   '<input type="radio" name="location" value="baronian" required>Baronian</td>' +
+                   '</tr>' +
+                   '<tr><td align="right">How far do you want to run?</td>' + 
+                   '<td><input name="dist" size="5" required></td>' +
+                   '</tr>' +
+                   '<tr><td align="right">Give or take...</td>' + 
+                   '<td><select name="range" required>' +
+                   '<option value="0.5">0.5 miles</option>' +
+                   '<option value="1">1 mile</option>' +
+                   '<option value="2">2 miles</option>' +
+                   '<option value="3">3 miles</option></select></td>' + 
+                   '</tr>' +
+                   '</table>' +
                    '<button type="submit">Submit</button>' +
-                   '</form>';
+                   '</form>' + link;
         res.send(html);
 });
 
-/* This route will take in the input from the home page */
 app.post('/', function (req, res) {
 
-        var message = ""; /* error message */
+        var html = "<!DOCTYPE HTML><html><head><title>Available Runs</title></head><body><div align='center'>";
+        var linkBack = "<p><a href='/'>Search for another run</a></p><p><a href='/addRun'>Add a run</a></p></div></body></html>";
+        var numErr = 0;
 
-        /* sanitize this input! */
         validator.escape(req.body);
 
-        var location = req.body.location.toLowerCase(); /* safe because of select tag; also have to lowercase the name for database lookup */
-        var range = req.body.range; /* also safe because of select tag */
-
-        /* checking for float or int value, and character length */
-        if (validator.isFloat(req.body.distance) || validator.isInt(req.body.distance)) {
-                if (validator.isLength(req.body.distance, 1, 5))
-                        var distance = parseFloat(req.body.distance);         
-                else
-                        message += "Invalid run length\n";
+        if (req.body.location != "") {
+                if (validator.equals(req.body.location, 'gantcher')) {
+                        var location = 'gantcher';
+                } else if (validator.equals(req.body.location, 'baronian')) {
+                        var location = 'baronian';
+                } else {
+                        numErr++;
+                        html += "<p>Invalid location</p>";
+                }
         } else {
-                message += "Not a valid number\n";
+                numErr++;
+                html += "<p>You did not submit a location</p>";
         }
 
-        /* Now I have access to variables location and distance ! */
-        // var html = 'You want to run from ' + location + ' and you want to run ' + distance + ' miles.<br>' +
-        //      '<a href="/">Search for another run</a>';
-        // res.send(html);
-        /* I have two options. I can either:
-                a. Find the run with the closest approximation to the inputted run, or
-                b. Find a list of runs within the inputted range
-                        - I'm gonna try b because that seems like something people would like more
-           Once I do that, I'll send back the data for:
-           1. The run name
-           2. The distance
-           3. The URL linking to the run map
-           I need an array of some sort to store the indices...but also fill it dynamically...
-           I can use .push!
-           input: 14
-           run dist: 13.5
-           range: 1
-           I wanna know: is (Math.abs(13.5 - 14) < 1)
-        */
-        var html = "";
+        if (validator.isFloat(req.body.dist) || validator.isInt(req.body.dist)) {
+                if (validator.isLength(req.body.dist, 1, 5))
+                        var dist = parseFloat(req.body.dist);         
+                else {
+                        numErr++;
+                        html += "<p>Invalid run length</p>";
+                }
+        } else {
+                numErr++;
+                html += "<p>Distance not a valid number</p>";
+        }
+
+        if (validator.isFloat(req.body.range) || validator.isInt(req.body.range)) {
+                if (validator.isLength(req.body.range, 1, 3))
+                        var range = parseFloat(req.body.range);         
+                else {
+                        numErr++;
+                        html += "<p>Invalid range</p>";
+                }
+        } else {
+                numErr++;
+                html += "<p>Range not a valid number</p>";
+        }
+
         var indices = [];
-        if (message == "") {
-                db.collection(location, function(er, collection) {
-                        collection.find().toArray(function(err, cursor) {
+        var numReturned = 0;
+
+        if (numErr == 0) {
+                db.collection("runs", function(er, collection) {
+                        collection.find().sort({ gdist: 1, bdist: 1 }).toArray(function(err, cursor) {
                                 if (!err) {
-                                        html += "<!DOCTYPE HTML><html><head><title>Available Runs</title></head><body><h1>Your Options</h1>";
-                                        /* fetching algorithm; returns the index array of the entries whose distance is within range of the inputted distance */
-                                        for (var i = 0; i < cursor.length; i++) {
-                                                if (Math.abs(cursor[i].dist - distance) <= range) {
-                                                        indices.push(i);
+                                        if (location == "gantcher") {
+                                                html += "<h1>Your Options from Gantcher</h1>";
+                                                for (var i = 0; i < cursor.length; i++) {
+                                                        if (Math.abs(cursor[i].gdist - dist) <= range) {
+                                                                numReturned++;
+                                                                html += "<h2>" + cursor[i].name + "</h2>" +
+                                                                        "<h3>" + cursor[i].gdist + " miles</h3>" +
+                                                                        "<p>" + cursor[i].desc + "</p>" +
+                                                                        "<h4><a href=" + cursor[i].url + " target='_blank'>Route map</a></h4>";
+                                                        }
+                                                }
+                                        } else {
+                                                html += "<h1>Your Options from Baronian</h1>";
+                                                for (var i = 0; i < cursor.length; i++) {
+                                                        if (Math.abs(cursor[i].bdist - dist) <= range) {
+                                                                numReturned++;
+                                                                html += "<h2>" + cursor[i].name + "</h2>" +
+                                                                        "<h4>" + cursor[i].bdist + " miles</h4>" +
+                                                                        "<p>" + cursor[i].desc + "</p>" +
+                                                                        "<h4><a href=" + cursor[i].url + " target='_blank'>Route map</a></h4>";
+                                                        }
                                                 }
                                         }
-                                        /* now we go through indices and print out our options */
-                                        if (indices.length == 0) {      /* didn't find anything! */
-                                                html += "<p>Couldn't find any runs meeting those conditions</p></body></html>";
+
+                                        if (numReturned > 0) {
+                                                html += linkBack;
                                                 res.send(html);
                                         } else {
-                                                //indices.sort(function(a,b) { return a - b; });
-                                                for (var j = 0; j < indices.length; j++) {
-                                                        /* should I make this a table? */
-                                                        /* for now it is just raw html info */
-                                                        html += "<h2>" + cursor[indices[j]].name + "</h2>" +
-                                                                "<h4>" + cursor[indices[j]].dist + " miles</h4>" +
-                                                                "<h4><a href=" + cursor[indices[j]].url + ">Route map</a></h4>";
-
-                                                }
-                                                html += "<a href='/'>Search for another run</a></body></html>";
+                                                html += "<p>Couldn't find any runs meeting those conditions</p>" + linkBack;
                                                 res.send(html);
                                         }
                                 } else {
-                                        html += "<a href='/'>Oops! Something went wrong! Search for another run</a></body></html>";
+                                        html += "<p>Oops! Something went wrong!</p>" + linkBack;
                                         res.send(html);
                                 }
                         });
                 });
         } else {
-                res.send(message);
+                html += linkBack;
+                res.send(html);
         }
 
 });
 
 app.get('/addRun', function (req, res) {
-        var html = '<!DOCTYPE HTML><html><head><title>Add Run</title></head><body><h1>Add a run</h1>' +
+
+        /* ADD HILLINESS FACTOR AT SOME POINT */
+        var link = "<p><a href='/'>Search for a run</a></p></div></body></html>";
+        var html = '<!DOCTYPE HTML><html><head><title>Add Run</title></head><body><div align="center"><h1>Add a new run</h1>' +
                    '<form action="/addRun" method="post">' +
-                   'Where does the run start from? ' +
-                   '<select name="col">' +
-                   '<option value="Gantcher">Gantcher</option>' +
-                   '<option value="Baronian">Baronian</option>' +
-                   '</select>' + 
-                   '<br><br>What is the name of the run? ' +
-                   '<input type="text" name="name" />' +
-                   '<br><br>How far is the run? ' +
-                   '<input type="text" name="dist" />' +
-                   '<br><br>Please provide a gmap-pedometer URL for this run: ' +
-                   '<input type="text" name="url" />' +
+                   '<table cellspacing="10">' +
+                   '<tr><td>Run Name:</td> <td><input name="name" size="20" required></td> </tr>' +
+                   '<tr><td>Gantcher Distance:</td> <td><input name="gdist" size="5" required></td> </tr>' +
+                   '<tr><td>Baronian Distance:</td> <td><input name="bdist" size="5" required></td> </tr>' +
+                   '<tr><td>Route Map URL:</td>     <td><input name="url" size="35" required></td> </tr>' +
+                   '<tr><td></td>                   <td><i>Requires gmap-pedometer or favoriterun</i></td> </tr>' +
+                   '<tr><td>Description:</td>       <td><textarea name="desc" style="resize:none;" rows=4 cols=50></textarea required></td> </tr>' +
+                   '<tr><td></td>                   <td><i>(i.e. terrain, hilliness, bathroom availability, etc.)</i></td> </tr>' +
+                   '</table>' +
                    '<br><br>' +
                    '<button type="submit">Submit</button>' +
-                   '</form></body></html>';
+                   '</form>' + link;
         res.send(html);
 
 });
-/* This will allow for more runs to be added without halting the app */
-/* Of course there are some security issues with this, but the input it at least sanitized */
+
 app.post('/addRun', function (req, res) {
 
-        validator.escape(req.body);     /* preventing XSS */
+        var html = "<!DOCTYPE HTML><html><head><title>Run Submission</title></head><body><div align='center'>";
+        var linkBack = "<p><a href='/'>Search for a run</a></p><p><a href='/addRun'>Add another run</a></p></div></body></html>";
+        var numErr = 0;
 
-        var col;
-        var message = "";
+        validator.escape(req.body);
 
-        /* checking validity of collection input */
-        if (req.body.col) {
-                if (validator.equals(req.body.col.toLowerCase(), 'gantcher')) {
-                        col = req.body.col.toLowerCase();
-                } else if (validator.equals(req.body.col.toLowerCase(), 'baronian')) {
-                        col = req.body.col.toLowerCase();
-                } else {
-                        message += "<p>Invalid location:" + req.body.col + "</p>";
-                }
-        } else {
-                message += "<p>You did not submit a location</p>";
-        }
-
-        /* checking validity of name input */
-        if (req.body.name) {
+        if (req.body.name != "") {
                 if (validator.isLength(req.body.name, 1, 20)) {
-                        var name = req.body.name;
+                        var name = validator.escape(req.body.name);
                 } else {
-                        message += "<p>Invalid name: " + req.body.name + "</p>";
+                        numErr++;
+                        html += "<p>Run name too long</p>";
                 }
         } else {
-                message += "<p>You did not submit a name!</p>";
+                numErr++;
+                html += "<p>You did not submit a run name</p>";
         }
 
-        /* checking validity of distance input */
-        if (req.body.dist) {
-                if (validator.isFloat(req.body.dist) || validator.isInt(req.body.dist)) {
-                        if (validator.isLength(req.body.dist, 1, 5))
-                                var dist = parseFloat(req.body.dist);         
-                        else
-                                message += "<p>Invalid run length</p>";
+        if (req.body.gdist != "") {
+                if (validator.isFloat(req.body.gdist) || validator.isInt(req.body.gdist)) {
+                        if (validator.isLength(req.body.gdist, 1, 5)) {
+                                var gdist = parseFloat(req.body.gdist);
+                        } else {
+                                numErr++;
+                                html += "<p>Invalid Gantcher distance</p>";
+                        }
                 } else {
-                        message += "<p>Not a valid distance: " + req.body.dist + "</p>";
+                        numErr++;
+                        html += "<p>Not a number</p>";
                 }
         } else {
-                message += "<p>You did not submit a distance</p>";
+                numErr++;
+                html += "<p>You did not submit a Gantcher distance</p>";
         }
 
-        /*checking validity of url input */
-        if (req.body.url) {
+        if (req.body.bdist != "") {
+                if (validator.isFloat(req.body.bdist) || validator.isInt(req.body.bdist)) {
+                        if (validator.isLength(req.body.bdist, 1, 5)) {
+                                var bdist = parseFloat(req.body.bdist);
+                        } else {
+                                numErr++;
+                                html += "<p>Invalid Baronian distance</p>";
+                        }
+                } else {
+                        numErr++;
+                        html += "<p>Not a number</p>";
+                }
+        } else {
+                numErr++;
+                html += "<p>You did not submit a Baronian distance</p>";
+        }
+
+        if (req.body.url != "") {
                 if (validator.isURL(req.body.url)) {
                         if (validator.contains(req.body.url, "gmap-pedometer") || validator.contains(req.body.url, "favoriterun"))
                                 var url = req.body.url;
-                        else
-                                message += "<p>Invalid website name</p>";
+                        else {
+                                numErr++;
+                                html += "<p>Invalid URL</p>";
+                        }
                 } else {
-                        message += "<p>Not a URL: " + req.body.url + "</p>";
+                        numErr++;
+                        html += "<p>Not a URL</p>";
                 }
         } else {
-                message += "<p>You did not submit a URL</p>";
+                numErr++;
+                html += "<p>You did not submit a URL</p>";
         }
 
-        if (message == "") {
+        if (req.body.desc != "") {
+                var desc = validator.escape(req.body.desc);
+        } else {
+                numErr++;
+                html += "<p>You did not submit a description</p>"
+        }
+
+        if (numErr == 0) {
                 var toInsert = {
                         "name":name,
-                        "dist":dist,
-                        "url":url
+                        "gdist":gdist,
+                        "bdist":bdist,
+                        "url":url,
+                        "desc":desc
                 };
-                var html = "<!DOCTYPE HTML><html><head><title>Run Submission</title></head><body>";
 
-                db.collection(col, function (er, collection) {
+                db.collection("runs", function (er, collection) {
                         collection.find().toArray(function (err, cursor) {
                                 if (!err) {
                                         for (var i = 0; i < cursor.length; i++) {
                                                 if (name.toLowerCase() == cursor[i].name.toLowerCase()) {
-                                                        html += "<p>This run is already in the database!" +
-                                                                "(Perhaps you got mixed up with Gantcher and Baronian?)" + 
-                                                                "<br><a href='/'>Search for a run</a><br><a href='/addRun'>Add a run</a></p>";
+                                                        numErr++;
+                                                        html += "<p>This run is already in the database!</p>";
                                                 }
                                         }
-                                        if (html == "<!DOCTYPE HTML><html><head><title>Run Submission</title></head><body>") {    //only store into database if no problems occurred!
+                                        if (numErr == 0) {
                                                 var id = collection.insert(toInsert, function(err, saved) {
                                                         if (err) {
-                                                                html += "<p>Error storing into database</p>";
+                                                                numErr++;
+                                                                html += "<p>Error storing into database</p>" + linkBack;
+                                                                res.send(html);
                                                         }
                                                         else {
-                                                                html += "<p>Success!<br><a href='/'>Search for a run</a><br><a href='/addRun'>Add another run</a></p>";
+                                                                html += "<p>Success!</p>" + linkBack;
                                                                 res.send(html);
                                                         }
                                                 });
                                         } else {
+                                                html += linkBack;
                                                 res.send(html);
                                         }
                                 }
                         });
                 });
         } else {
-                res.send(message);
+                html += linkBack;
+                res.send(html);
         }
 });
 
-// Oh joy! http://stackoverflow.com/questions/15693192/heroku-node-js-error-web-process-failed-to-bind-to-port-within-60-seconds-of
-app.listen(process.env.PORT || 3000);
+app.get('/*', function(req, res) {
+        res.sendStatus(404);
+});
 
+app.listen(process.env.PORT || 3000);
