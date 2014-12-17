@@ -39,7 +39,8 @@ var db = mongo.Db.connect(mongoUri, function (error, databaseConnection) {
 app.get('/', function (req, res) {
         res.set('Content-Type', 'text/html');
         var link = "<p><a href='/addRun'>Add a run</a></p></div></body></html>";
-        var html = '<div align="center"><h1>Run Generator</h1>' +
+        var html = '<!DOCTYPE HTML><html><head><title>Choose a Run</title></head>'
+                   '<body><div align="center"><h1>Run Generator</h1>' +
                    '<form action="/" method="post">' +
                    '<table cellspacing="20">' +
                    '<tr><td align="right">Where are you running from?</td>' +
