@@ -113,7 +113,7 @@ app.post('/', function (req, res) {
 
         if (numErr == 0) {
                 db.collection("runs", function(er, collection) {
-                        collection.find().sort({ gdist: 1 }).sort({ bdist : 1}).toArray(function(err, cursor) {
+                        collection.find().sort({ gdist: 1 }).toArray(function(err, cursor) {
                                 if (!err) {
                                         if (location == "gantcher") {
                                                 html += "<h1>Your Options from Gantcher</h1>";
