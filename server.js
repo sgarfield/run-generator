@@ -10,7 +10,7 @@
  * Uses: Javascript, Node.js, Express, and MongoDB
  */
 
-/* Ideas:
+/* More Ideas:
         - Have a "hilly" boolean value for each run
         - Bathroom friendliness rating?
         - Maybe split runs by region?
@@ -113,7 +113,7 @@ app.post('/', function (req, res) {
 
         if (numErr == 0) {
                 db.collection("runs", function(er, collection) {
-                        collection.find().sort({ gdist: 1, bdist: 1 }).toArray(function(err, cursor) {
+                        collection.find().sort({ gdist: 1 }).sort({ bdist : 1}).toArray(function(err, cursor) {
                                 if (!err) {
                                         if (location == "gantcher") {
                                                 html += "<h1>Your Options from Gantcher</h1>";
@@ -156,17 +156,15 @@ app.post('/', function (req, res) {
                 html += linkBack;
                 res.send(html);
         }
-
 });
 
 app.get('/addRun', function (req, res) {
 
-        /* ADD HILLINESS FACTOR AT SOME POINT */
         var link = "<p><a href='/'>Search for a run</a></p></div></body></html>";
         var html = '<!DOCTYPE HTML><html><head><title>Add Run</title></head><body><div align="center"><h1>Add a new run</h1>' +
                    '<form action="/addRun" method="post">' +
                    '<table cellspacing="10">' +
-                   '<tr><td>Run Name:</td> <td><input name="name" size="20" required></td> </tr>' +
+                   '<tr><td>Run Name:</td> <td><input name="name" size="25" required></td> </tr>' +
                    '<tr><td>Gantcher Distance:</td> <td><input name="gdist" size="5" required></td> </tr>' +
                    '<tr><td>Baronian Distance:</td> <td><input name="bdist" size="5" required></td> </tr>' +
                    '<tr><td>Route Map URL:</td>     <td><input name="url" size="35" required></td> </tr>' +
@@ -190,7 +188,7 @@ app.post('/addRun', function (req, res) {
         validator.escape(req.body);
 
         if (req.body.name != "") {
-                if (validator.isLength(req.body.name, 1, 20)) {
+                if (validator.isLength(req.body.name, 1, 25)) {
                         var name = validator.escape(req.body.name);
                 } else {
                         numErr++;
