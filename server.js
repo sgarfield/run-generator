@@ -36,7 +36,7 @@ var db = mongo.Db.connect(mongoUri, function (error, databaseConnection) {
         }
 });
 
-app.get('/', function (req, res) {
+app.get('/', function (req, res) { 
         res.set('Content-Type', 'text/html');
         var link = "<p><a href='/addRun'>Add a run</a></p></div></body></html>";
         var html = '<!DOCTYPE HTML><html><head><title>Choose a Run</title></head>' +
