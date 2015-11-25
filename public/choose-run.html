@@ -33,11 +33,11 @@
             <h1>Run Generator</h1>
             <!-- This form calls the app.post('choose-run') method in server.js -->
             <form>
-                  <table cellspacing="20">
+                  <table>
                         <tr>
                               <td align="right">Where are you running from?</td>
-                              <td><input type="radio" name="location" value="gantcher" ng-model="Run.location" required>Gantcher<br>
-                                  <input type="radio" name="location" value="baronian" ng-model="Run.location" required>Baronian</td>
+                              <td><input type="radio" name="location" value="gantcher" ng-model="Run.location" required>  Gantcher<br>
+                                  <input type="radio" name="location" value="baronian" ng-model="Run.location" required>  Baronian</td>
                         </tr>
                         <tr>
                               <td align="right">How far do you want to run?</td>
@@ -56,12 +56,14 @@
                   <button ng-click="chooseRun()" type="submit">Submit</button>
             </form>
             <!-- app.post('choose-run') method in server.js returns these runs -->
+            <br>
+            <!-- <h3>{{ runs.length }}</h3> -->
             <div align="center" ng-repeat="run in runs">
               <div>
                 <h3>{{ run.name }}</h3>
                 <h4>Distance from Gantcher: {{ run.gdist }} mi</h4>
                 <h4>Distance from Baronian: {{ run.bdist }} mi</h4>
-                <h4><a href={{ run.url }}>Route Map</a></h4>
+                <h4><a href="{{ run.url }}" target="_blank">Route Map</a></h4>
                 <h4>{{ run.desc }}</h4>
               </div>
               <br>
