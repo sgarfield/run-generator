@@ -23,24 +23,14 @@ var bodyParser     = require('body-parser');    // pull information from HTML PO
 
 // configuration =================
 
-var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
+//var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
+var mongoUri = "mongodb://<user>:<password>@dogen.mongohq.com:10080/app32317845";
 mongoose.connect(mongoUri);     // connect to mongoDB database
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function(callback) {
     // yay!
 });
-
-// var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
-// var MongoClient = require('mongodb').MongoClient, format = require('util').format;
-// var db = MongoClient.connect(mongoUri, function (error, databaseConnection) {
-//         db = databaseConnection;
-//         if (db) {
-//                 db.createCollection("runs", function (err, collection){
-//                         if (err) throw err;
-//                 });
-//         }
-// });
 
 app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
 app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
@@ -56,46 +46,14 @@ var Run = mongoose.model('Run', {
         desc: String
     });
 
-// won't be using this
 app.get('/api/runs', function(req, res) {
-
-        // use mongoose to get all runs in the database
         Run.find(function(err, runs) {
-
-                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
                 if (err) {
                         res.send(err)
                 }
-                res.send(JSON.stringify(runs)); // return all runs in JSON format
+                res.send(JSON.stringify(runs));
         });
 });
-
-// create run and send back all runs after creation
-// want this to be create run, then send a success message
-// won't be using this
-// app.post('/api/runs', function(req, res) {
-
-//     // create a run, information comes from AJAX request from Angular
-//     Run.create({
-//         name : req.body.name,
-//         gdist: req.body.gdist,
-//         bdist: req.body.bdist,
-//         url  : req.body.url,
-//         desc : req.body.desc,
-//         done : false
-//     }, function(err, run) {
-//         if (err) {
-//             res.send(err);
-//         }
-//         // get and return all the runs after you create another
-//         Run.find(function(err, runs) {
-//             if (err) {
-//                 res.send(err)
-//             }
-//             res.json(runs);
-//         });
-//     });
-// });
 
 /* 
 This is the main method we want the application to complete.
@@ -118,8 +76,6 @@ app.post('/choose-run', function(req, res) {
 
     if (location == "gantcher") {
         /* sort Gantcher runs in ascending order */
-        // .sort() and .toArray() are not valid with Mongoose??
-        // maybe I can use runs.forEach(function(err, run){});
         Run.find({
             gdist: { $gte: distance - range, $lte: distance + range }
         })
@@ -175,7 +131,6 @@ be an error message made by Angular.
 */
 app.post('/add-run', function(req, res) {
 
-    // create a run, information comes from AJAX request from Angular
     /* have to come back and validate this input */
     var toReturn = {};
 
@@ -207,8 +162,8 @@ app.post('/add-run', function(req, res) {
 
 // application -------------------------------------------------------------
 app.get('/', function(req, res) {
-    app.get('/api/runs'); // this is to get/set the total number of runs
-    res.sendfile('./public/index.html'); // this is just the home page
+    app.get('/api/runs'); // get/set the total number of runs
+    res.sendfile('./public/index.html'); // home page
 });
 
 app.get('/choose-run', function(req, res) { // this is where the application really is (angular will handle the page changes on the front-end)
