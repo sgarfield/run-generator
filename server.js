@@ -23,7 +23,8 @@ var bodyParser     = require('body-parser');    // pull information from HTML PO
 
 // configuration =================
 
-var mongoUri = process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
+var port = process.env.PORT || 8080;
+var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
 mongoose.connect(mongoUri);     // connect to mongoDB database
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -178,5 +179,4 @@ app.get('/*', function(req, res) {
 });
 
 // listen (start app with node server.js) ======================================
-app.listen(8080);
-console.log("App listening on port 8080");
+app.listen(port);
