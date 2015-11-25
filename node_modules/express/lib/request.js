@@ -4,7 +4,6 @@
 
 var accepts = require('accepts');
 var deprecate = require('depd')('express');
-var isIP = require('net').isIP;
 var typeis = require('type-is');
 var http = require('http');
 var fresh = require('fresh');
@@ -333,16 +332,11 @@ defineGetter(req, 'ips', function ips() {
  */
 
 defineGetter(req, 'subdomains', function subdomains() {
-  var hostname = this.hostname;
-
-  if (!hostname) return [];
-
   var offset = this.app.get('subdomain offset');
-  var subdomains = !isIP(hostname)
-    ? hostname.split('.').reverse()
-    : [hostname];
-
-  return subdomains.slice(offset);
+  return (this.hostname || '')
+    .split('.')
+    .reverse()
+    .slice(offset);
 });
 
 /**

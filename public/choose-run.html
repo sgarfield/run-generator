@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html ng-app="runGenerator">
+<head>
+      <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+      <link rel="stylesheet" type="text/css" href="css/styles.css">
+      <title>Choose a Run</title>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+      <script src='https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+      <script src='js/bootstrap.min.js'></script>
+      <script src="core.js"></script>
+</head>
+<body ng-controller="mainController">
+      <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Run Generator</a>
+          </div>
+          <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+              <li><a href="/choose-run">Choose a Run</a></li>
+              <li><a href="/add-run">Add a Run</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+
+      <div align="center">
+            <h1>Run Generator</h1>
+            <!-- This form calls the app.post('choose-run') method in server.js -->
+            <form>
+                  <table cellspacing="20">
+                        <tr>
+                              <td align="right">Where are you running from?</td>
+                              <td><input type="radio" name="location" value="gantcher" ng-model="Run.location" required>Gantcher<br>
+                                  <input type="radio" name="location" value="baronian" ng-model="Run.location" required>Baronian</td>
+                        </tr>
+                        <tr>
+                              <td align="right">How far do you want to run?</td>
+                              <td><input name="dist" size="5" ng-model="Run.dist" required></td>
+                        </tr>
+                        <tr>
+                              <td align="right">Give or take...</td>
+                              <td><select name="range" ng-model="Run.range" required>
+                                    <option value="0.5">0.5 miles</option>
+                                    <option value="1">1 mile</option>
+                                    <option value="2">2 miles</option>
+                                    <option value="3">3 miles</option></select>
+                              </td>
+                        </tr>
+                  </table>
+                  <button ng-click="chooseRun()" type="submit">Submit</button>
+            </form>
+            <!-- app.post('choose-run') method in server.js returns these runs -->
+            <div align="center" ng-repeat="run in runs">
+              <div>
+                <h3>{{ run.name }}</h3>
+                <h4>Distance from Gantcher: {{ run.gdist }} mi</h4>
+                <h4>Distance from Baronian: {{ run.bdist }} mi</h4>
+                <h4><a href={{ run.url }}>Route Map</a></h4>
+                <h4>{{ run.desc }}</h4>
+              </div>
+              <br>
+            </div>
+      </div>
+</body>
+</html>

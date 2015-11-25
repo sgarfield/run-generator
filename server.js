@@ -2,307 +2,227 @@
  * Sam Garfield
  * server.js
  * Developed 12/16/14
+ * Revised 11/25/15
  *
  * This is the interface and back-end code that reads user input and
  * returns viable running routes from a database. It also allows users
  * to submit their own runs, under the right conditions.
  *
- * Uses: Javascript, Node.js, Express, and MongoDB
+ * Uses: Javascript, AngularJS, Express.js, MongoDB, HTML/CSS
+ * HTML/CSS Web Pages <--> AngularJS Server/View Communicator <--> Express.js Server <--> Mongo Database
  */
 
 /* More Ideas:
         - Have a "hilly" boolean value for each run
         - Bathroom friendliness rating?
-        - Maybe split runs by region?
-        - Allowing a user to search for the run name?
-                - Avoid querying
 */
-var express = require('express');
-var bodyParser = require('body-parser');
-var validator = require('validator');
-var app = express();
+var express        = require('express');
+var app            = express();                               // create our app w/ express
+var mongoose       = require('mongoose');                     // mongoose for mongodb
+var bodyParser     = require('body-parser');    // pull information from HTML POST (express4)
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// configuration =================
 
 var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
-var mongo = require('mongodb');
-var db = mongo.Db.connect(mongoUri, function (error, databaseConnection) {
-        db = databaseConnection;
-        if (db){
-                db.createCollection("runs", function (err, collection){
-                        if (err) throw err;
-                });
-        }
+mongoose.connect(mongoUri);     // connect to mongoDB database
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function(callback) {
+    // yay!
 });
 
-app.get('/', function (req, res) { 
-        res.set('Content-Type', 'text/html');
-        var link = "<p><a href='/addRun'>Add a run</a></p></div></body></html>";
-        var html = '<!DOCTYPE HTML><html><head><title>Choose a Run</title></head>' +
-                   '<body><div align="center"><h1>Run Generator</h1>' +
-                   '<form action="/" method="post">' +
-                   '<table cellspacing="20">' +
-                   '<tr><td align="right">Where are you running from?</td>' +
-                   '<td><input type="radio" name="location" value="gantcher" required>Gantcher<br>' +
-                   '<input type="radio" name="location" value="baronian" required>Baronian</td>' +
-                   '</tr>' +
-                   '<tr><td align="right">How far do you want to run?</td>' + 
-                   '<td><input name="dist" size="5" required></td>' +
-                   '</tr>' +
-                   '<tr><td align="right">Give or take...</td>' + 
-                   '<td><select name="range" required>' +
-                   '<option value="0.5">0.5 miles</option>' +
-                   '<option value="1">1 mile</option>' +
-                   '<option value="2">2 miles</option>' +
-                   '<option value="3">3 miles</option></select></td>' + 
-                   '</tr>' +
-                   '</table>' +
-                   '<button type="submit">Submit</button>' +
-                   '</form>' + link;
-        res.send(html);
+// var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
+// var MongoClient = require('mongodb').MongoClient, format = require('util').format;
+// var db = MongoClient.connect(mongoUri, function (error, databaseConnection) {
+//         db = databaseConnection;
+//         if (db) {
+//                 db.createCollection("runs", function (err, collection){
+//                         if (err) throw err;
+//                 });
+//         }
+// });
+
+app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
+app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
+app.use(bodyParser.json());                                     // parse application/json
+app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
+
+// define model
+var Run = mongoose.model('Run', {
+        name : String,
+        gdist: Number,
+        bdist: Number,
+        url: String,
+        desc: String
+    });
+
+// won't be using this
+app.get('/api/runs', function(req, res) {
+
+        // use mongoose to get all runs in the database
+        Run.find(function(err, runs) {
+
+                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
+                if (err) {
+                        res.send(err)
+                }
+                res.send(JSON.stringify(runs)); // return all runs in JSON format
+        });
 });
 
-app.post('/', function (req, res) {
+// create run and send back all runs after creation
+// want this to be create run, then send a success message
+// won't be using this
+// app.post('/api/runs', function(req, res) {
 
-        var html = "<!DOCTYPE HTML><html><head><title>Available Runs</title></head><body><div align='center'>";
-        var linkBack = "<p><a href='/'>Search for another run</a></p><p><a href='/addRun'>Add a run</a></p></div></body></html>";
-        var numErr = 0;
+//     // create a run, information comes from AJAX request from Angular
+//     Run.create({
+//         name : req.body.name,
+//         gdist: req.body.gdist,
+//         bdist: req.body.bdist,
+//         url  : req.body.url,
+//         desc : req.body.desc,
+//         done : false
+//     }, function(err, run) {
+//         if (err) {
+//             res.send(err);
+//         }
+//         // get and return all the runs after you create another
+//         Run.find(function(err, runs) {
+//             if (err) {
+//                 res.send(err)
+//             }
+//             res.json(runs);
+//         });
+//     });
+// });
 
-        validator.escape(req.body);
+/* 
+This is the main method we want the application to complete.
+When we submit the form on the choose-run page, this method
+is called, retrieving the specific runs based on the user specs.
+Angular deals with the front-end details, meaning we don't
+have to send HTML here. We just send the JSON Run objects
+and Angular will make sure the elements go to the right places.   
+*/
+app.post('/choose-run', function(req, res) {
 
-        if (req.body.location != "") {
-                if (validator.equals(req.body.location, 'gantcher')) {
-                        var location = 'gantcher';
-                } else if (validator.equals(req.body.location, 'baronian')) {
-                        var location = 'baronian';
-                } else {
-                        numErr++;
-                        html += "<p>Invalid location</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>You did not submit a location</p>";
-        }
+    /* check if location is gantcher or baronian */
+    var location = req.body.location;
+    /* check if distance is between 0 and 100 exclusive */
+    var distance = parseFloat(req.body.dist);
+    /* check if range is between 0 and 3(?) inclusive */
+    var range = parseFloat(req.body.range);
+    
+    //validator.escape(req.body);
 
-        if (validator.isFloat(req.body.dist) || validator.isInt(req.body.dist)) {
-                if (validator.isLength(req.body.dist, 1, 5))
-                        var dist = parseFloat(req.body.dist);         
-                else {
-                        numErr++;
-                        html += "<p>Invalid run length</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>Distance not a valid number</p>";
-        }
-
-        if (validator.isFloat(req.body.range) || validator.isInt(req.body.range)) {
-                if (validator.isLength(req.body.range, 1, 3))
-                        var range = parseFloat(req.body.range);         
-                else {
-                        numErr++;
-                        html += "<p>Invalid range</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>Range not a valid number</p>";
-        }
-
-        var indices = [];
-        var numReturned = 0;
-
-        if (numErr == 0) {
-                db.collection("runs", function(er, collection) {
-                        collection.find().sort({ gdist: 1 }).toArray(function(err, cursor) {
-                                if (!err) {
-                                        if (location == "gantcher") {
-                                                html += "<h1>Your Options from Gantcher</h1>";
-                                                for (var i = 0; i < cursor.length; i++) {
-                                                        if (Math.abs(cursor[i].gdist - dist) <= range) {
-                                                                numReturned++;
-                                                                html += "<h2>" + cursor[i].name + "</h2>" +
-                                                                        "<h3>" + cursor[i].gdist + " miles</h3>" +
-                                                                        "<p>" + cursor[i].desc + "</p>" +
-                                                                        "<h4><a href=" + cursor[i].url + " target='_blank'>Route map</a></h4>";
-                                                        }
-                                                }
-                                        } else {
-                                                html += "<h1>Your Options from Baronian</h1>";
-                                                for (var i = 0; i < cursor.length; i++) {
-                                                        if (Math.abs(cursor[i].bdist - dist) <= range) {
-                                                                numReturned++;
-                                                                html += "<h2>" + cursor[i].name + "</h2>" +
-                                                                        "<h4>" + cursor[i].bdist + " miles</h4>" +
-                                                                        "<p>" + cursor[i].desc + "</p>" +
-                                                                        "<h4><a href=" + cursor[i].url + " target='_blank'>Route map</a></h4>";
-                                                        }
-                                                }
-                                        }
-
-                                        if (numReturned > 0) {
-                                                html += linkBack;
-                                                res.send(html);
-                                        } else {
-                                                html += "<p>Couldn't find any runs meeting those conditions</p>" + linkBack;
-                                                res.send(html);
-                                        }
-                                } else {
-                                        html += "<p>Oops! Something went wrong!</p>" + linkBack;
-                                        res.send(html);
-                                }
-                        });
-                });
-        } else {
-                html += linkBack;
-                res.send(html);
-        }
+    if (location == "gantcher") {
+        /* sort Gantcher runs in ascending order */
+        // .sort() and .toArray() are not valid with Mongoose??
+        // maybe I can use runs.forEach(function(err, run){});
+        Run.find({
+            gdist: { $gte: distance - range, $lte: distance + range }
+        })
+        .sort({ gdist: 1 })
+        .exec(function(err, runs) {
+            if (err) {
+                res.send(err);
+            }
+            res.send(JSON.stringify(runs));
+        });
+    } else {
+        /* sort Baronian runs in ascending order */
+        Run.find({
+            bdist: { $gte: distance - range, $lte: distance + range }
+        })
+        .sort({ bdist: 1 })
+        .exec(function(err, runs) {
+            if (err) {
+                res.send(err);
+            }
+            res.send(JSON.stringify(runs));
+        });
+    }
 });
 
-app.get('/addRun', function (req, res) {
+/*
+When a user attempts to add a run, the page
+should send a message right away using AJAX.
+This is the method that displays the success
+or failure of adding a run, making it easy for
+a user to edit and re-submit a run if it didn't
+work the first time. (Is that how it will work?)
 
-        var link = "<p><a href='/'>Search for a run</a></p></div></body></html>";
-        var html = '<!DOCTYPE HTML><html><head><title>Add Run</title></head><body><div align="center"><h1>Add a new run</h1>' +
-                   '<form action="/addRun" method="post">' +
-                   '<table cellspacing="10">' +
-                   '<tr><td>Run Name:</td> <td><input name="name" size="25" required></td> </tr>' +
-                   '<tr><td>Gantcher Distance:</td> <td><input name="gdist" size="5" required></td> </tr>' +
-                   '<tr><td>Baronian Distance:</td> <td><input name="bdist" size="5" required></td> </tr>' +
-                   '<tr><td>Route Map URL:</td>     <td><input name="url" size="35" required></td> </tr>' +
-                   '<tr><td></td>                   <td><i>Requires gmap-pedometer or favoriterun</i></td> </tr>' +
-                   '<tr><td>Description:</td>       <td><textarea name="desc" style="resize:none;" rows=4 cols=50></textarea required></td> </tr>' +
-                   '<tr><td></td>                   <td><i>(i.e. terrain, hilliness, bathroom availability, etc.)</i></td> </tr>' +
-                   '</table>' +
-                   '<br><br>' +
-                   '<button type="submit">Submit</button>' +
-                   '</form>' + link;
-        res.send(html);
+If the method does work, we should print out the
+parameters of the new run to the user, with a success
+message. Something like:
 
+Success! [Run name] was added to the database.
+
+or
+
+Error! [Run name] already exists.
+
+or
+
+Error! Invalid parameters (can we specify which?)
+
+The method should check that:
+    - A run exists already
+    - The parameters are all valid
+If either of these are disobeyed, there should
+be an error message made by Angular.
+*/
+app.post('/add-run', function(req, res) {
+
+    // create a run, information comes from AJAX request from Angular
+    /* have to come back and validate this input */
+    var toReturn = {};
+
+    Run.create({
+        name : req.body.name,
+        gdist: req.body.gdist,
+        bdist: req.body.bdist,
+        url  : req.body.url,
+        desc : req.body.desc,
+        done : false
+    }, function(err, run) {
+        if (err) {
+            res.send(err);
+        }
+        // get and return all the runs after you create another
+        Run.find(function(err, runs) {
+            if (err) {
+                res.send(err)
+            }
+            runs.forEach(function(run) {
+                if (run.name == req.body.name) {
+                    toReturn = run;
+                }
+            })
+            res.json(toReturn);
+        });
+    });
 });
 
-app.post('/addRun', function (req, res) {
+// application -------------------------------------------------------------
+app.get('/', function(req, res) {
+    app.get('/api/runs'); // this is to get/set the total number of runs
+    res.sendfile('./public/index.html'); // this is just the home page
+});
 
-        var html = "<!DOCTYPE HTML><html><head><title>Run Submission</title></head><body><div align='center'>";
-        var linkBack = "<p><a href='/'>Search for a run</a></p><p><a href='/addRun'>Add another run</a></p></div></body></html>";
-        var numErr = 0;
+app.get('/choose-run', function(req, res) { // this is where the application really is (angular will handle the page changes on the front-end)
+    res.sendfile('./public/choose-run.html');
+});
 
-        validator.escape(req.body);
-
-        if (req.body.name != "") {
-                if (validator.isLength(req.body.name, 1, 25)) {
-                        var name = validator.escape(req.body.name);
-                } else {
-                        numErr++;
-                        html += "<p>Run name too long</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>You did not submit a run name</p>";
-        }
-
-        if (req.body.gdist != "") {
-                if (validator.isFloat(req.body.gdist) || validator.isInt(req.body.gdist)) {
-                        if (validator.isLength(req.body.gdist, 1, 5)) {
-                                var gdist = parseFloat(req.body.gdist);
-                        } else {
-                                numErr++;
-                                html += "<p>Invalid Gantcher distance</p>";
-                        }
-                } else {
-                        numErr++;
-                        html += "<p>Not a number</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>You did not submit a Gantcher distance</p>";
-        }
-
-        if (req.body.bdist != "") {
-                if (validator.isFloat(req.body.bdist) || validator.isInt(req.body.bdist)) {
-                        if (validator.isLength(req.body.bdist, 1, 5)) {
-                                var bdist = parseFloat(req.body.bdist);
-                        } else {
-                                numErr++;
-                                html += "<p>Invalid Baronian distance</p>";
-                        }
-                } else {
-                        numErr++;
-                        html += "<p>Not a number</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>You did not submit a Baronian distance</p>";
-        }
-
-        if (req.body.url != "") {
-                if (validator.isURL(req.body.url)) {
-                        if (validator.contains(req.body.url, "gmap-pedometer") || validator.contains(req.body.url, "favoriterun"))
-                                var url = req.body.url;
-                        else {
-                                numErr++;
-                                html += "<p>Invalid URL</p>";
-                        }
-                } else {
-                        numErr++;
-                        html += "<p>Not a URL</p>";
-                }
-        } else {
-                numErr++;
-                html += "<p>You did not submit a URL</p>";
-        }
-
-        if (req.body.desc != "") {
-                var desc = validator.escape(req.body.desc);
-        } else {
-                numErr++;
-                html += "<p>You did not submit a description</p>"
-        }
-
-        if (numErr == 0) {
-                var toInsert = {
-                        "name":name,
-                        "gdist":gdist,
-                        "bdist":bdist,
-                        "url":url,
-                        "desc":desc
-                };
-
-                db.collection("runs", function (er, collection) {
-                        collection.find().toArray(function (err, cursor) {
-                                if (!err) {
-                                        for (var i = 0; i < cursor.length; i++) {
-                                                if (name.toLowerCase() == cursor[i].name.toLowerCase()) {
-                                                        numErr++;
-                                                        html += "<p>This run is already in the database!</p>";
-                                                }
-                                        }
-                                        if (numErr == 0) {
-                                                var id = collection.insert(toInsert, function(err, saved) {
-                                                        if (err) {
-                                                                numErr++;
-                                                                html += "<p>Error storing into database</p>" + linkBack;
-                                                                res.send(html);
-                                                        }
-                                                        else {
-                                                                html += "<p>Success!</p>" + linkBack;
-                                                                res.send(html);
-                                                        }
-                                                });
-                                        } else {
-                                                html += linkBack;
-                                                res.send(html);
-                                        }
-                                }
-                        });
-                });
-        } else {
-                html += linkBack;
-                res.send(html);
-        }
+app.get('/add-run', function(req, res) { // angular should send a success/failure message once a run is added/attempted to be added
+    res.sendfile('./public/add-run.html');
 });
 
 app.get('/*', function(req, res) {
-        res.sendStatus(404);
+    res.send(404);
 });
 
-app.listen(process.env.PORT || 3000);
+// listen (start app with node server.js) ======================================
+app.listen(8080);
+console.log("App listening on port 8080");
