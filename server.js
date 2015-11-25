@@ -23,8 +23,7 @@ var bodyParser     = require('body-parser');    // pull information from HTML PO
 
 // configuration =================
 
-//var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
-var mongoUri = "mongodb://<user>:<password>@dogen.mongohq.com:10080/app32317845";
+var mongoUri = process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
 mongoose.connect(mongoUri);     // connect to mongoDB database
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
