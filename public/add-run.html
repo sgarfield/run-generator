@@ -31,23 +31,24 @@
 
       <div align="center">
         <h1>Add a new run</h1>
-        <form action="/add-run" method="post">
+        <form>
           <table>
-            <tr><td>Run Name:</td> <td><input name="name" size="25" required></td> </tr>
-            <tr><td>Gantcher Distance:</td><td><input name="gdist" size="5"  required></td>      </tr>
-            <tr><td>Baronian Distance:</td><td><input name="bdist" size="5"  required></td>      </tr>
-            <tr><td>Route Map URL:    </td><td><input name="url"   size="35" required></td>      </tr>
+            <tr><td>Run Name:</td> <td><input name="name" size="25" ng-model="Run.name" required></td> </tr>
+            <tr><td>Gantcher Distance:</td><td><input name="gdist" size="5" ng-model="Run.gdist" required></td>      </tr>
+            <tr><td>Baronian Distance:</td><td><input name="bdist" size="5" ng-model="Run.bdist" required></td>      </tr>
+            <tr><td>Route Map URL:    </td><td><input name="url"   size="35" ng-model="Run.url" required></td>      </tr>
             <tr><td>                  </td><td><i>Requires gmap-pedometer or favoriterun</i></td></tr>
-            <tr><td>Description:      </td><td><textarea name="desc" style="resize:none;" rows=4 cols=50></textarea required></td></tr>
+            <tr><td>Description:      </td><td><textarea name="desc" style="resize:none;" ng-model="Run.desc" rows=4 cols=50 required></textarea></td></tr>
             <tr><td>                  </td><td><i>(i.e. terrain, hilliness, bathroom availability, etc.)</i></td></tr>
           </table>
           <br><br>
-          <button type="submit" ng-click="addRun">Submit</button>
+          <button ng-click="addRun()" type="submit">Submit</button>
         </form>
       </div>
 
-      <div align="center" ng-repeat="run in runs">
-        <h3>Success! {{ run.name }} was added to the database!</h3>
+      <div align="center">
+        <h3 ng-show="newruns.name">Success! {{ newruns.name }} was added to the database!</h3>
+        <h3 ng-repeat="exist in exists | limitTo: 1">Sorry! {{ exist.name }} already exists.</h3>
       </div>
 </body>
 </html>

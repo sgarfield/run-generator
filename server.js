@@ -4,8 +4,8 @@
  * Developed 12/16/14
  * Revised 11/25/15
  *
- * This is the interface and back-end code that reads user input and
- * returns viable running routes from a database. It also allows users
+ * This is the back-end server that reads/validates user input and
+ * returns viable running routes from the database. It also allows users
  * to submit their own runs, under the right conditions.
  *
  * Uses: Javascript, AngularJS, Express.js, MongoDB, HTML/CSS
@@ -17,9 +17,9 @@
         - Bathroom friendliness rating?
 */
 var express        = require('express');
-var app            = express();                               // create our app w/ express
-var mongoose       = require('mongoose');                     // mongoose for mongodb
-var bodyParser     = require('body-parser');    // pull information from HTML POST (express4)
+var app            = express();
+var mongoose       = require('mongoose');
+var bodyParser     = require('body-parser');
 
 // configuration =================
 
@@ -32,19 +32,25 @@ db.once('open', function(callback) {
     // yay!
 });
 
-app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
-app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
+app.use(express.static(__dirname + '/public'));
+app.use(bodyParser.urlencoded({'extended':'true'}));
 app.use(bodyParser.json());                                     // parse application/json
 app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
 
-// define model
+// define models
 var Run = mongoose.model('Run', {
-        name : String,
-        gdist: Number,
-        bdist: Number,
-        url: String,
-        desc: String
-    });
+    name : String,
+    gdist: Number,
+    bdist: Number,
+    url: String,
+    desc: String
+});
+
+var Input = mongoose.model('Input', {
+    name: String,
+    dist: Number,
+    range: Number
+});
 
 app.get('/api/runs', function(req, res) {
         Run.find(function(err, runs) {
@@ -70,7 +76,7 @@ app.post('/choose-run', function(req, res) {
     /* check if distance is between 0 and 100 exclusive */
     var distance = parseFloat(req.body.dist);
     /* check if range is between 0 and 3(?) inclusive */
-    var range = parseFloat(req.body.range);
+    var range    = parseFloat(req.body.range);
     
     //validator.escape(req.body);
 
@@ -102,61 +108,40 @@ app.post('/choose-run', function(req, res) {
 });
 
 /*
-When a user attempts to add a run, the page
-should send a message right away using AJAX.
-This is the method that displays the success
-or failure of adding a run, making it easy for
-a user to edit and re-submit a run if it didn't
-work the first time. (Is that how it will work?)
-
-If the method does work, we should print out the
-parameters of the new run to the user, with a success
-message. Something like:
-
-Success! [Run name] was added to the database.
-
-or
-
-Error! [Run name] already exists.
-
-or
-
-Error! Invalid parameters (can we specify which?)
-
-The method should check that:
-    - A run exists already
-    - The parameters are all valid
-If either of these are disobeyed, there should
-be an error message made by Angular.
+Method that allows or rejects an added run to the db
 */
 app.post('/add-run', function(req, res) {
 
-    /* have to come back and validate this input */
-    var toReturn = {};
+    var run_name = req.body.name;
+    var g_dist   = req.body.gdist;
+    var b_dist   = req.body.bdist;
+    var link     = req.body.url;
+    var descr    = req.body.desc;
 
-    Run.create({
-        name : req.body.name,
-        gdist: req.body.gdist,
-        bdist: req.body.bdist,
-        url  : req.body.url,
-        desc : req.body.desc,
-        done : false
-    }, function(err, run) {
+    /* have to come back and validate this input */
+
+    Run.find({ name: run_name })
+    .exec(function(err, runs) {
         if (err) {
             res.send(err);
         }
-        // get and return all the runs after you create another
-        Run.find(function(err, runs) {
-            if (err) {
-                res.send(err)
-            }
-            runs.forEach(function(run) {
-                if (run.name == req.body.name) {
-                    toReturn = run;
+        if (runs.length > 0) {
+            //console.log("Run already exists!");
+            res.send(JSON.stringify(runs));
+        } else {
+            Run.create({
+                name : run_name,
+                gdist: g_dist,
+                bdist: b_dist,
+                url  : link,
+                desc : descr
+            }, function(err, run) {
+                if (err) {
+                    res.send(err);
                 }
-            })
-            res.json(toReturn);
-        });
+                res.send(JSON.stringify(run));
+            });
+        }
     });
 });
 

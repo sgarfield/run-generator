@@ -9,6 +9,8 @@
         function mainController($scope, $http) {
                 $scope.routes = {}; // init
                 $scope.runs = {};
+                $scope.newruns = {};
+                $scope.exists = {};
 
                 // when landing on the home page, get the runs so we can print the number
                 $http.get('/api/runs')
@@ -21,13 +23,13 @@
                         });
 
                 $scope.chooseRun = function() {
-                        $http.post('/choose-run', $scope.Run)
+                        $http.post('/choose-run', $scope.Input)
                                 .success(function(data) {
                                         /* leaving out a field won't cause blank data to be printed anyway */
-                                        if ($scope.Run.dist > 0) {
+                                        if ($scope.Input.dist > 0) {
                                                 $scope.runs = data;
                                         }
-                                        //$scope.Run = {}; //this clears the input fields
+                                        //$scope.Input = {}; //this clears the input fields
                                         //console.log(data);
                                 })
                                 .error(function(data) {
@@ -36,11 +38,16 @@
                 };
 
                 $scope.addRun = function() {
-                        $http.post('/add-run', $scope.formData)
+                        $http.post('/add-run', $scope.Run)
                                 .success(function(data) {
-                                        $scope.formData = {};
-                                        $scope.runs = data;
-                                        console.log(data);
+                                        //$scope.runs = {};
+                                        if (data.length > 0) {
+                                            $scope.newruns = {};
+                                            $scope.exists = data;
+                                        } else {
+                                            $scope.newruns = data;
+                                            $scope.exists = {};
+                                        }
                                 })
                                 .error(function(data) {
                                         console.log('Error: ' + data);
