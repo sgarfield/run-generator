@@ -46,6 +46,7 @@
                         <tr>
                               <td align="right">Give or take...</td>
                               <td><select name="range" ng-model="Input.range" required>
+                                    <option value="0">0 miles</option>
                                     <option value="0.5">0.5 miles</option>
                                     <option value="1">1 mile</option>
                                     <option value="2">2 miles</option>
@@ -53,13 +54,14 @@
                               </td>
                         </tr>
                   </table>
-                  <button ng-click="chooseRun()" type="submit">Submit</button>
+                  <button ng-show="Input.location == 'gantcher' || Input.location == 'baronian' && Input.dist > 0 && Input.range >= 0" ng-click="chooseRun()" type="submit">Submit</button>
             </form>
             <!-- app.post('choose-run') method in server.js returns these runs -->
             <br>
-            <h4 ng-show="runs.length > 0">{{ runs.length }} Results Found</h4>
+            <h4 ng-show="runs.length == 1">{{ runs.length }} Result Found</h4>
+            <h4 ng-show="runs.length >= 0 && runs.length != 1">{{ runs.length }} Results Found</h4>
             <div align="center" ng-repeat="run in runs">
-              <div>
+              <div class="results">
                 <h3>{{ run.name }}</h3>
                 <h4 ng-show="Input.location=='gantcher'">Distance from Gantcher: {{ run.gdist }} mi</h4>
                 <h4 ng-show="Input.location=='baronian'">Distance from Baronian: {{ run.bdist }} mi</h4>
