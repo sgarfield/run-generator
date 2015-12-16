@@ -33,6 +33,36 @@
             <h1>Welcome to the Tufts Run Generator!</h1>
             <h3>There are {{ routes.length }} runs to choose from!</h3>
       </div>
+
+      <div align="center">
+          <h4>Sort By:</h4>
+      </div>
+      <table align="center" class="sort">
+          <tr>
+            <th ng-click="sortByName()">Name</th>
+            <th ng-click="sortByGantcher()">Gantcher</th>
+            <th ng-click="sortByBaronian()">Baronian</th>
+          </tr>
+      </table>
+
+      <br>
+
+      <table align="center" class="routes">
+          <tr>
+            <th>Route Name</th>
+            <th>From Gantcher</th>
+            <th>From Baronian</th>
+            <th>Route Map</th>
+            <th>Description</th>
+          </tr>
+          <tr ng-repeat="route in routes">
+              <td>{{ route.name }}</td>
+              <td>{{ route.gdist }} mi</td>
+              <td>{{ route.bdist }} mi</td>
+              <td><a href="{{ route.url }}" target="_blank">Map</a></td>
+              <td>{{ route.desc }}</td>
+          </tr>
+      </table>
 </body>
 
 </html>

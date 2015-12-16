@@ -10,13 +10,43 @@
         function homeController($scope, $http) {
                 $scope.routes = {};
 
-                $http.get('/api/runs')
+                $http.get('/api/runsname')
                         .success(function(data) {
                                 $scope.routes = data;
                         })
                         .error(function(data) {
                                 console.log('Error: ' + data);
                         });
+
+                $scope.sortByName = function() {
+                        $http.get('/api/runsname')
+                                .success(function(data) {
+                                    $scope.routes = data;
+                                })
+                                .error(function(data) {
+                                    console.log('Error: ' + data);
+                                });
+                };
+
+                $scope.sortByGantcher = function() {
+                        $http.get('/api/runsgdist')
+                                .success(function(data) {
+                                    $scope.routes = data;
+                                })
+                                .error(function(data) {
+                                    console.log('Error: ' + data);
+                                });
+                };
+
+                $scope.sortByBaronian = function() {
+                        $http.get('/api/runsbdist')
+                                .success(function(data) {
+                                    $scope.routes = data;
+                                })
+                                .error(function(data) {
+                                    console.log('Error: ' + data);
+                                });
+                };
         }
 
         function chooseRunController($scope, $http) {

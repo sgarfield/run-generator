@@ -12,3 +12,42 @@ table {
         border-radius: 4px;
         border-width: 2px;
 }
+
+.sort {
+        table-layout: fixed;
+        width: 30%;
+}
+
+.sort, .sort th {
+        border-collapse: separate;
+        text-align: center;
+        border-spacing: 5px;
+}
+
+.sort th {
+        border: 1px solid black;
+}
+
+.sort th:hover {
+        background-color: #2c76ad;
+        cursor: pointer;
+}
+
+.routes tr:nth-child(even) {
+        background-color: #CCC;
+}
+
+.routes tr:nth-child(odd) {
+        background: #FFF;
+}
+
+.routes th {
+        background-color: #2c76ad;
+        color: white;
+}
+
+.routes, .routes th, .routes td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        text-align: center;
+}

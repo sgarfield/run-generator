@@ -68,8 +68,32 @@ var Input = mongoose.model('Input', {
 
 // methods =====================================================================
 
-app.get('/api/runs', function(req, res) {
-        Run.find(function(err, runs) {
+app.get('/api/runsname', function(req, res) {
+        Run.find({})
+        .sort({ name: 1 })
+        .exec(function(err, runs) {
+                if (err) {
+                        res.send(err)
+                }
+                res.send(JSON.stringify(runs));
+        });
+});
+
+app.get('/api/runsgdist', function(req, res) {
+        Run.find({})
+        .sort({ gdist: 1 })
+        .exec(function(err, runs) {
+                if (err) {
+                        res.send(err)
+                }
+                res.send(JSON.stringify(runs));
+        });
+});
+
+app.get('/api/runsbdist', function(req, res) {
+        Run.find({})
+        .sort({ bdist: 1 })
+        .exec(function(err, runs) {
                 if (err) {
                         res.send(err)
                 }
@@ -188,7 +212,7 @@ app.post('/add-run', function(req, res) {
 // application =================================================================
 
 app.get('/', function(req, res) {
-    app.get('/api/runs');
+    app.get('/api/runsname');
     res.sendfile('./public/index.html');
 });
 
