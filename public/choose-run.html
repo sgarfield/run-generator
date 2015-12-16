@@ -25,13 +25,12 @@
               <li><a href="/choose-run">Choose a Run</a></li>
               <li><a href="/add-run">Add a Run</a></li>
             </ul>
-          </div><!--/.nav-collapse -->
+          </div>
         </div>
       </div>
 
       <div align="center">
             <h1>Choose a Run</h1>
-            <!-- This form calls the app.post('choose-run') method in server.js -->
             <form>
                   <table>
                         <tr>
@@ -56,7 +55,6 @@
                   </table>
                   <button ng-show="Input.location != null && Input.dist > 0 && Input.range >= 0" ng-click="chooseRun()" type="submit">Submit</button>
             </form>
-            <!-- app.post('choose-run') method in server.js returns these runs -->
             <br>
             <h4 ng-show="err">Error! Bad parameters</h4>
             <h4 ng-show="runs && results.range > 0 && results.dist-results.range >= 0">{{ results.dist - results.range }} to {{ results.dist -- results.range }} mile run from {{ results.location }}</h4>

@@ -50,6 +50,8 @@ app.use(expressValidator({
     }
 }));
 
+// models ======================================================================
+
 var Run = mongoose.model('Run', {
     name : String,
     gdist: Number,
@@ -63,6 +65,8 @@ var Input = mongoose.model('Input', {
     dist: Number,
     range: Number
 });
+
+// methods =====================================================================
 
 app.get('/api/runs', function(req, res) {
         Run.find(function(err, runs) {
@@ -182,8 +186,9 @@ app.post('/add-run', function(req, res) {
 });
 
 // application =================================================================
+
 app.get('/', function(req, res) {
-    app.get('/api/runs'); // get/set the total number of runs
+    app.get('/api/runs');
     res.sendfile('./public/index.html');
 });
 
@@ -200,4 +205,5 @@ app.get('/*', function(req, res) {
 });
 
 // listen (start app with node server.js) ======================================
+
 app.listen(port);

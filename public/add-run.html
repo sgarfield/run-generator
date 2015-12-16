@@ -25,7 +25,7 @@
               <li><a href="/choose-run">Choose a Run</a></li>
               <li><a href="/add-run">Add a Run</a></li>
             </ul>
-          </div><!--/.nav-collapse -->
+          </div>
         </div>
       </div>
 
@@ -47,7 +47,7 @@
       </div>
 
       <div align="center">
-        <h3 ng-show="newruns">Success! {{ newruns.name }} was added to the database!</h3>
+        <h3 ng-show="newrun">Success! {{ newrun.name }} was added to the database!</h3>
         <h3 ng-show="exists" ng-repeat="exist in exists | limitTo: 1">Sorry! {{ exist.name }} already exists.</h3>
         <h3 ng-show="err">Error! Bad parameters. Could not add {{ err.name }}.</h3>
       </div>

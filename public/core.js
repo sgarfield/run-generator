@@ -47,27 +47,27 @@
         }
 
         function addRunController($scope, $http) {
-                $scope.newruns = null;
+                $scope.newrun = null;
                 $scope.exists = null;
-                $scope.err = null;
+                $scope.err    = null;
 
                 $scope.addRun = function() {
                         $http.post('/add-run', $scope.Run)
                                 .success(function(data) {
                                     if (!data.err) {
                                         if (data.length > 0) {
-                                            $scope.exists  = data;
-                                            $scope.newruns = null;
-                                            $scope.err     = null
+                                            $scope.exists = data;
+                                            $scope.newrun = null;
+                                            $scope.err    = null
                                         } else {
-                                            $scope.newruns = data;
-                                            $scope.exists  = null;
-                                            $scope.err     = null;
+                                            $scope.newrun = data;
+                                            $scope.exists = null;
+                                            $scope.err    = null;
                                         }
                                     } else {
                                         $scope.err = $scope.Run;
-                                        $scope.newruns = null;
-                                        $scope.exists  = null;
+                                        $scope.newrun = null;
+                                        $scope.exists = null;
                                     }
                                 })
                                 .error(function(data) {
