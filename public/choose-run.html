@@ -62,16 +62,23 @@
             <h4 ng-show="runs && results.range == 0">{{ results.dist }} mile run from {{ results.location }}</h4>
             <h4 ng-show="runs.length == 1">{{ runs.length }} Result Found</h4>
             <h4 ng-show="runs && runs.length != 1">{{ runs.length }} Results Found</h4>
-            <div align="center" ng-repeat="run in runs">
-              <div class="results">
-                <h3>{{ run.name }}</h3>
-                <h4 ng-show="results.location=='Gantcher'">Distance from Gantcher: {{ run.gdist }} mi</h4>
-                <h4 ng-show="results.location=='Baronian'">Distance from Baronian: {{ run.bdist }} mi</h4>
-                <h4><a href="{{ run.url }}" target="_blank">Route Map</a></h4>
-                <h4>{{ run.desc }}</h4>
-              </div>
-              <br>
-            </div>
+            <table align="center" class="routes">
+                <tr ng-show="runs">
+                    <th>Route Name</th>
+                    <th ng-show="results.location=='Gantcher'">From Gantcher</th>
+                    <th ng-show="results.location=='Baronian'">From Baronian</th>
+                    <th>Route Map</th>
+                    <th>Description</th>
+                </tr>
+                <tr ng-repeat="run in runs">
+                    <td>{{ run.name }}</td>
+                    <td ng-show="results.location=='Gantcher'">{{ run.gdist }} mi</td>
+                    <td ng-show="results.location=='Baronian'">{{ run.bdist }} mi</td>
+                    <td><a href="{{ route.url }}" target="_blank">Map</a></td>
+                    <td>{{ run.desc }}</td>
+                </tr>
+            </table>
+            <br>
       </div>
 </body>
 </html>
