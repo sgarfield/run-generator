@@ -7,5 +7,13 @@ It allows the user to input his starting location (one of two locations on campu
 
 It also allows a user to submit a new run, given he submits all the required fields under the right conditions.
 
-The app uses HTML, CSS, Javascript, AngularJS, Express.js, MongoDB, and is hosted via Heroku. It can be found at:
-http://rungenerator.herokuapp.com/
+The architecture is as follows:
+Static HTML pages <--> AngularJS <--> ExpressJS <--> MongoDB
+
+From left to right: A user makes an HTTP request, which Angular processes and feeds to the server. The server can
+then access the database, fetching viable information.
+
+From right to left: The server takes JSON data from the database and feeds it to Angular, which can display the
+information directly on the web page, without having to reload the page.
+
+The app can be found at: http://rungenerator.herokuapp.com/

@@ -9,7 +9,7 @@
       <script src='js/bootstrap.min.js'></script>
       <script src="core.js"></script>
 </head>
-<body ng-controller="mainController">
+<body ng-controller="chooseRunController">
       <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
           <div class="navbar-header">
@@ -36,8 +36,8 @@
                   <table>
                         <tr>
                               <td align="right">Where are you running from?</td>
-                              <td><input type="radio" name="location" value="gantcher" ng-model="Input.location" required>  Gantcher<br>
-                                  <input type="radio" name="location" value="baronian" ng-model="Input.location" required>  Baronian</td>
+                              <td><input type="radio" name="location" value="Gantcher" ng-model="Input.location" required>  Gantcher<br>
+                                  <input type="radio" name="location" value="Baronian" ng-model="Input.location" required>  Baronian</td>
                         </tr>
                         <tr>
                               <td align="right">How far do you want to run?</td>
@@ -54,17 +54,19 @@
                               </td>
                         </tr>
                   </table>
-                  <button ng-show="Input.location == 'gantcher' || Input.location == 'baronian' && Input.dist > 0 && Input.range >= 0" ng-click="chooseRun()" type="submit">Submit</button>
+                  <button ng-show="Input.location != null && Input.dist > 0 && Input.range >= 0" ng-click="chooseRun()" type="submit">Submit</button>
             </form>
             <!-- app.post('choose-run') method in server.js returns these runs -->
             <br>
+            <h4 ng-show="runs.length >= 0 && results.range > 0">{{ results.dist - results.range }} to {{ results.dist -- results.range }} mile run from {{ results.location }}</h4>
+            <h4 ng-show="runs.length >= 0 && results.range == 0">{{ results.dist }} mile run from {{ results.location }}</h4>
             <h4 ng-show="runs.length == 1">{{ runs.length }} Result Found</h4>
             <h4 ng-show="runs.length >= 0 && runs.length != 1">{{ runs.length }} Results Found</h4>
             <div align="center" ng-repeat="run in runs">
               <div class="results">
                 <h3>{{ run.name }}</h3>
-                <h4 ng-show="Input.location=='gantcher'">Distance from Gantcher: {{ run.gdist }} mi</h4>
-                <h4 ng-show="Input.location=='baronian'">Distance from Baronian: {{ run.bdist }} mi</h4>
+                <h4 ng-show="results.location=='Gantcher'">Distance from Gantcher: {{ run.gdist }} mi</h4>
+                <h4 ng-show="results.location=='Baronian'">Distance from Baronian: {{ run.bdist }} mi</h4>
                 <h4><a href="{{ run.url }}" target="_blank">Route Map</a></h4>
                 <h4>{{ run.desc }}</h4>
               </div>

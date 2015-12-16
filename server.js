@@ -8,36 +8,48 @@
  * returns viable running routes from the database. It also allows users
  * to submit their own runs, under the right conditions.
  *
- * Uses: Javascript, AngularJS, Express.js, MongoDB, HTML/CSS
- * HTML/CSS Web Pages <--> AngularJS Server/View Communicator <--> Express.js Server <--> Mongo Database
  */
 
-/* More Ideas:
-        - Have a "hilly" boolean value for each run
-        - Bathroom friendliness rating?
-*/
-var express        = require('express');
-var app            = express();
-var mongoose       = require('mongoose');
-var bodyParser     = require('body-parser');
+var express          = require('express');
+var app              = express();
+var mongoose         = require('mongoose');
+var bodyParser       = require('body-parser');
+var expressValidator = require('express-validator');
+var util             = require('util');
 
-// configuration =================
+// configuration ===============================================================
 
 var port = process.env.PORT || 8080;
-var mongoUri = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/runs';
-mongoose.connect(mongoUri);     // connect to mongoDB database
+var mongoUri = process.env.MONGOLAB_URI 
+            || process.env.MONGOHQ_URL 
+            || 'mongodb://localhost/runs';
+mongoose.connect(mongoUri);
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function(callback) {
-    // yay!
 });
 
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({'extended':'true'}));
-app.use(bodyParser.json());                                     // parse application/json
-app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
+app.use(bodyParser.json());
+//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
+app.use(expressValidator({
+    customValidators: {
+        validLocation: function(value) {
+            return value == "Gantcher" || value == "Baronian";
+        },
+        gt: function(param, num) {
+            return param > num;
+        },
+        gte: function(param, num) {
+            return param >= num;
+        },
+        lte: function(param, num) {
+            return param <= num;
+        }
+    }
+}));
 
-// define models
 var Run = mongoose.model('Run', {
     name : String,
     gdist: Number,
@@ -62,26 +74,33 @@ app.get('/api/runs', function(req, res) {
 });
 
 /* 
-This is the main method we want the application to complete.
-When we submit the form on the choose-run page, this method
-is called, retrieving the specific runs based on the user specs.
-Angular deals with the front-end details, meaning we don't
-have to send HTML here. We just send the JSON Run objects
-and Angular will make sure the elements go to the right places.   
-*/
+ * This is the main method that the application completes.
+ * When the form is submitted on the choose-run page, this method
+ * is called, retrieving the specific runs based on the user specs.
+ * Angular deals with the front-end details, so there's no need to
+ * send HTML here. We just send the JSON Run objects and Angular 
+ * will make sure the elements go to the right places.   
+ */
 app.post('/choose-run', function(req, res) {
 
-    /* check if location is gantcher or baronian */
-    var location = req.body.location;
-    /* check if distance is between 0 and 100 exclusive */
-    var distance = parseFloat(req.body.dist);
-    /* check if range is between 0 and 3(?) inclusive */
-    var range    = parseFloat(req.body.range);
-    
-    //validator.escape(req.body);
+    req.checkBody('location').isAlpha().validLocation();
+    req.sanitize('location').escape();
 
-    if (location == "gantcher") {
-        /* sort Gantcher runs in ascending order */
+    req.checkBody('dist').isFloat().len(1, 4).gt(0).lte(50);
+    req.sanitize('dist').escape();
+
+    req.checkBody('range').isFloat().len(1, 3).gte(0).lte(3);
+    req.sanitize('range').escape();
+
+    var errors = req.validationErrors();
+    if (errors) {
+        res.send('Validation errors: ' + util.inspect(errors) + '\n', 400);
+    }
+    var location = req.body.location;
+    var distance = parseFloat(req.body.dist);
+    var range    = parseFloat(req.body.range);
+
+    if (location == "Gantcher") {
         Run.find({
             gdist: { $gte: distance - range, $lte: distance + range }
         })
@@ -93,7 +112,7 @@ app.post('/choose-run', function(req, res) {
             res.send(JSON.stringify(runs));
         });
     } else {
-        /* sort Baronian runs in ascending order */
+        /* Baronian */
         Run.find({
             bdist: { $gte: distance - range, $lte: distance + range }
         })
@@ -108,17 +127,36 @@ app.post('/choose-run', function(req, res) {
 });
 
 /*
-Method that allows or rejects an added run to the db
-*/
+ * Method that allows or rejects an added run to the db
+ */
 app.post('/add-run', function(req, res) {
+
+    req.checkBody('name').len(1, 30);
+    req.sanitize('name').escape();
+
+    req.checkBody('gdist').isFloat().len(1, 4).gt(0).lte(50);
+    req.sanitize('gdist').escape();
+
+    req.checkBody('bdist').isFloat().len(1, 4).gt(0).lte(50);
+    req.sanitize('bdist').escape();
+
+    req.checkBody('url').isURL();
+    req.sanitize('url').escape();
+
+    req.checkBody('desc').len(1, 100);
+    req.sanitize('desc').escape();
+
+    var errors = req.validationErrors();
+    if (errors) {
+        res.send('Validation errors: ' + util.inspect(errors) + '\n', 400);
+        //return;
+    }
 
     var run_name = req.body.name;
     var g_dist   = req.body.gdist;
     var b_dist   = req.body.bdist;
     var link     = req.body.url;
     var descr    = req.body.desc;
-
-    /* have to come back and validate this input */
 
     Run.find({ name: run_name })
     .exec(function(err, runs) {
@@ -145,17 +183,17 @@ app.post('/add-run', function(req, res) {
     });
 });
 
-// application -------------------------------------------------------------
+// application =================================================================
 app.get('/', function(req, res) {
     app.get('/api/runs'); // get/set the total number of runs
-    res.sendfile('./public/index.html'); // home page
+    res.sendfile('./public/index.html');
 });
 
-app.get('/choose-run', function(req, res) { // this is where the application really is (angular will handle the page changes on the front-end)
+app.get('/choose-run', function(req, res) {
     res.sendfile('./public/choose-run.html');
 });
 
-app.get('/add-run', function(req, res) { // angular should send a success/failure message once a run is added/attempted to be added
+app.get('/add-run', function(req, res) {
     res.sendfile('./public/add-run.html');
 });
 

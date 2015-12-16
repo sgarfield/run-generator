@@ -9,7 +9,7 @@
       <script src='js/bootstrap.min.js'></script>
       <script src="core.js"></script>
 </head>
-<body ng-controller="mainController">
+<body ng-controller="addRunController">
       <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
           <div class="navbar-header">
@@ -42,12 +42,12 @@
             <tr><td>                  </td><td><i>(i.e. terrain, hilliness, bathroom availability, etc.)</i></td></tr>
           </table>
           <br><br>
-          <button ng-click="addRun()" type="submit">Submit</button>
+          <button ng-show="Run.name != null && Run.gdist > 0 && Run.bdist > 0 && Run.url != null && Run.desc != null" ng-click="addRun()" type="submit">Submit</button>
         </form>
       </div>
 
       <div align="center">
-        <h3 ng-show="newruns.name">Success! {{ newruns.name }} was added to the database!</h3>
+        <h3 ng-show="newruns.name != null">Success! {{ newruns.name }} was added to the database!</h3>
         <h3 ng-repeat="exist in exists | limitTo: 1">Sorry! {{ exist.name }} already exists.</h3>
       </div>
 </body>
