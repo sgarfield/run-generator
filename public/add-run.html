@@ -47,8 +47,9 @@
       </div>
 
       <div align="center">
-        <h3 ng-show="newruns.name != null">Success! {{ newruns.name }} was added to the database!</h3>
-        <h3 ng-repeat="exist in exists | limitTo: 1">Sorry! {{ exist.name }} already exists.</h3>
+        <h3 ng-show="newruns">Success! {{ newruns.name }} was added to the database!</h3>
+        <h3 ng-show="exists" ng-repeat="exist in exists | limitTo: 1">Sorry! {{ exist.name }} already exists.</h3>
+        <h3 ng-show="err">Error! Bad parameters. Could not add {{ err.name }}.</h3>
       </div>
 </body>
 </html>

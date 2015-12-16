@@ -58,10 +58,12 @@
             </form>
             <!-- app.post('choose-run') method in server.js returns these runs -->
             <br>
-            <h4 ng-show="runs.length >= 0 && results.range > 0">{{ results.dist - results.range }} to {{ results.dist -- results.range }} mile run from {{ results.location }}</h4>
-            <h4 ng-show="runs.length >= 0 && results.range == 0">{{ results.dist }} mile run from {{ results.location }}</h4>
+            <h4 ng-show="err">Error! Bad parameters</h4>
+            <h4 ng-show="runs && results.range > 0 && results.dist-results.range >= 0">{{ results.dist - results.range }} to {{ results.dist -- results.range }} mile run from {{ results.location }}</h4>
+            <h4 ng-show="runs && results.range > 0 && results.dist-results.range < 0">0 to {{ results.dist -- results.range }} mile run from {{ results.location }}</h4>
+            <h4 ng-show="runs && results.range == 0">{{ results.dist }} mile run from {{ results.location }}</h4>
             <h4 ng-show="runs.length == 1">{{ runs.length }} Result Found</h4>
-            <h4 ng-show="runs.length >= 0 && runs.length != 1">{{ runs.length }} Results Found</h4>
+            <h4 ng-show="runs && runs.length != 1">{{ runs.length }} Results Found</h4>
             <div align="center" ng-repeat="run in runs">
               <div class="results">
                 <h3>{{ run.name }}</h3>

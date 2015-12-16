@@ -32,7 +32,7 @@ db.once('open', function(callback) {
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({'extended':'true'}));
 app.use(bodyParser.json());
-//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
+app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(expressValidator({
     customValidators: {
         validLocation: function(value) {
@@ -74,12 +74,7 @@ app.get('/api/runs', function(req, res) {
 });
 
 /* 
- * This is the main method that the application completes.
- * When the form is submitted on the choose-run page, this method
- * is called, retrieving the specific runs based on the user specs.
- * Angular deals with the front-end details, so there's no need to
- * send HTML here. We just send the JSON Run objects and Angular 
- * will make sure the elements go to the right places.   
+ * Method that returns runs based on user's submitted parameters.  
  */
 app.post('/choose-run', function(req, res) {
 
@@ -93,36 +88,39 @@ app.post('/choose-run', function(req, res) {
     req.sanitize('range').escape();
 
     var errors = req.validationErrors();
-    if (errors) {
-        res.send('Validation errors: ' + util.inspect(errors) + '\n', 400);
-    }
-    var location = req.body.location;
-    var distance = parseFloat(req.body.dist);
-    var range    = parseFloat(req.body.range);
 
-    if (location == "Gantcher") {
-        Run.find({
-            gdist: { $gte: distance - range, $lte: distance + range }
-        })
-        .sort({ gdist: 1 })
-        .exec(function(err, runs) {
-            if (err) {
-                res.send(err);
-            }
-            res.send(JSON.stringify(runs));
-        });
-    } else {
-        /* Baronian */
-        Run.find({
-            bdist: { $gte: distance - range, $lte: distance + range }
-        })
-        .sort({ bdist: 1 })
-        .exec(function(err, runs) {
-            if (err) {
-                res.send(err);
-            }
-            res.send(JSON.stringify(runs));
-        });
+    if (errors) {
+        res.send(JSON.stringify({ err: true }));
+    }
+    else {
+        var location = req.body.location;
+        var distance = parseFloat(req.body.dist);
+        var range    = parseFloat(req.body.range);
+
+        if (location == "Gantcher") {
+            Run.find({
+                gdist: { $gte: distance - range, $lte: distance + range }
+            })
+            .sort({ gdist: 1 })
+            .exec(function(err, runs) {
+                if (err) {
+                    res.send(err);
+                }
+                res.send(JSON.stringify(runs));
+            });
+        } else {
+            /* Baronian */
+            Run.find({
+                bdist: { $gte: distance - range, $lte: distance + range }
+            })
+            .sort({ bdist: 1 })
+            .exec(function(err, runs) {
+                if (err) {
+                    res.send(err);
+                }
+                res.send(JSON.stringify(runs));
+            });
+        }
     }
 });
 
@@ -147,40 +145,40 @@ app.post('/add-run', function(req, res) {
     req.sanitize('desc').escape();
 
     var errors = req.validationErrors();
+
     if (errors) {
-        res.send('Validation errors: ' + util.inspect(errors) + '\n', 400);
-        //return;
+        res.send(JSON.stringify({ err: true }));
     }
+    else {
+        var run_name = req.body.name;
+        var g_dist   = req.body.gdist;
+        var b_dist   = req.body.bdist;
+        var link     = req.body.url;
+        var descr    = req.body.desc;
 
-    var run_name = req.body.name;
-    var g_dist   = req.body.gdist;
-    var b_dist   = req.body.bdist;
-    var link     = req.body.url;
-    var descr    = req.body.desc;
-
-    Run.find({ name: run_name })
-    .exec(function(err, runs) {
-        if (err) {
-            res.send(err);
-        }
-        if (runs.length > 0) {
-            //console.log("Run already exists!");
-            res.send(JSON.stringify(runs));
-        } else {
-            Run.create({
-                name : run_name,
-                gdist: g_dist,
-                bdist: b_dist,
-                url  : link,
-                desc : descr
-            }, function(err, run) {
-                if (err) {
-                    res.send(err);
-                }
-                res.send(JSON.stringify(run));
-            });
-        }
-    });
+        Run.find({ name: run_name })
+        .exec(function(err, runs) {
+            if (err) {
+                res.send(err);
+            }
+            if (runs.length > 0) {
+                res.send(JSON.stringify(runs));
+            } else {
+                Run.create({
+                    name : run_name,
+                    gdist: g_dist,
+                    bdist: b_dist,
+                    url  : link,
+                    desc : descr
+                }, function(err, run) {
+                    if (err) {
+                        res.send(err);
+                    }
+                    res.send(JSON.stringify(run));
+                });
+            }
+        });
+    }
 });
 
 // application =================================================================
